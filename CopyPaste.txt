@@ -1,0 +1,227 @@
+
+Private Property Get CopyList(index As Integer) As Variant
+    Dim STOREDPATH As String
+    STOREDPATH = "CopyList" & index
+    Dim cdps As DocumentProperties
+    Set cdps = ThisWorkbook.CustomDocumentProperties
+    If CDPExists(STOREDPATH) Then CopyList = cdps.Item(STOREDPATH)
+End Property
+
+Private Property Let CopyList(index As Integer, ByVal CDPValue)
+    Dim STOREDPATH As String
+    STOREDPATH = "CopyList" & index
+    Dim cdps As DocumentProperties
+    Set cdps = ThisWorkbook.CustomDocumentProperties
+
+    If Not CDPExists(STOREDPATH) Then
+        cdps.Add name:=STOREDPATH, LinkToContent:=False, Type:=msoPropertyTypeString, value:=CDPValue
+    Else
+        cdps.Item(STOREDPATH) = CDPValue
+    End If
+End Property
+
+Private Property Get PasteList(index As Integer) As Variant
+    Dim STOREDPATH As String
+    STOREDPATH = "PasteList" & index
+    Dim cdps As DocumentProperties
+    Set cdps = ThisWorkbook.CustomDocumentProperties
+    If CDPExists(STOREDPATH) Then PasteList = cdps.Item(STOREDPATH)
+End Property
+
+Private Property Let PasteList(index As Integer, ByVal CDPValue)
+    Dim STOREDPATH As String
+    STOREDPATH = "PasteList" & index
+    Dim cdps As DocumentProperties
+    Set cdps = ThisWorkbook.CustomDocumentProperties
+
+    If Not CDPExists(STOREDPATH) Then
+        cdps.Add name:=STOREDPATH, LinkToContent:=False, Type:=msoPropertyTypeString, value:=CDPValue
+    Else
+        cdps.Item(STOREDPATH) = CDPValue
+    End If
+End Property
+
+Sub ClearCopyList()
+    Dim index As Integer
+    index = 0
+    On Error Resume Next
+    While (CDPExists("CopyList" & index))
+        On Error Resume Next
+       ThisWorkbook.CustomDocumentProperties("CopyList" & index).Delete
+        On Error GoTo 0
+        On Error Resume Next
+        ThisWorkbook.CustomDocumentProperties("PasteList" & index).Delete
+        On Error GoTo 0
+        index = index + 1
+    Wend
+    On Error GoTo 0
+End Sub
+
+Private Function CDPExists(CDPName As String) As Boolean
+' Purp.: return True|False if Custom Document Property (CDP) name exists
+' Meth.: loop thru CustomDocumentProperties and check for existing sCDPName parameter
+' Site : https://stackoverflow.com/questions/41766268/check-if-builtindocumentproperty-is-set-without-error-trapping
+    Dim cdps As DocumentProperties
+    Set cdps = ThisWorkbook.CustomDocumentProperties
+    Dim boo  As Boolean                               ' boolean value showing element exists
+    Dim cdp  As DocumentProperty                      ' element of CustomDocumentProperties Collection
+    For Each cdp In cdps
+        If LCase(cdp.name) = LCase(CDPName) Then
+            boo = True                                ' heureka
+            Exit For                                  ' exit loop
+        End If
+    Next
+    CDPExists = boo                                   ' return value to function
+End Function
+
+Sub StateFileCheck()
+
+    Dim FPath As String
+    FPath = Application.ThisWorkbook.Path
+    
+    Dim stepSize As Integer
+    stepSize = 10000 
+    
+    Dim rng As Range
+    
+    'INPUTS
+    Dim wb As Workbook
+    Dim ws As Worksheet
+    
+    Dim CopyLoop As Boolean 'Determines if the user will loop through copy/paste
+    CopyLoop = 0
+    
+    If (CDPExists("CopyList0")) Then
+        CopyLoop = MsgBox("Would you like to use previous copy settings", vbQuestion + vbYesNo, "Copy Settings Found") = vbYes
+    Else
+        'clear
+        
+    End If
+    
+    Dim copyOption As Boolean
+    Dim copyShift As Boolean
+    Dim index As Integer
+    index = 0
+    
+    If (Not (CopyLoop)) Then
+        Call ClearCopyList
+            Do
+                Set rng = Nothing
+                On Error Resume Next
+                Set rng = Application.InputBox(Prompt:="Select row to copy. Cancel when done", Title:="COLUMN TO COPY", Type:=8)
+                On Error GoTo 0
+                
+                
+                If (Not (rng Is Nothing)) Then
+                    'TODO- ADD WORKSHEET INFO
+                    copyShift = MsgBox("Would you like to shift the copy value? Otherwise paste value will be shifted", vbQuestion + vbYesNo, "Copy Settings Found") = vbYes
+                    CopyList(index) = rng.Parent.Parent.name & "," & rng.Parent.name & "," & rng.Cells.Column & "," & (rng.Cells.Columns.count + rng.Cells.Column - 1) & "," & rng.Cells.Row & "," & copyShift & "," & rng.Parent.Parent.Path
+                    'Save copy list
+
+                    
+                   ' On Error Resume Next
+                    Set rng = Application.InputBox(Prompt:="Select row to paste", Title:="COLUMN TO PASTE", Type:=8)
+                   ' On Error GoTo 0
+                    copyOption = MsgBox("Would you like to copy value?", vbQuestion + vbYesNo, "Copy Settings Found") = vbYes
+                   
+                    PasteList(index) = rng.Parent.Parent.name & "," & rng.Parent.name & "," & rng.Cells.Column & "," & (rng.Cells.Columns.count + rng.Cells.Column - 1) & "," & rng.Cells.Row & "," & copyOption & "," & rng.Parent.Parent.Path & "," & copyShift
+                    
+                End If
+                index = index + 1
+            Loop Until rng Is Nothing
+    End If
+    
+    
+    
+    
+    'Calculate max row/range
+    Dim maxRow As Long
+    splitList = Split(CopyList(0), ",")
+    Set wb = Workbooks.Open(FPath & "\" & splitList(0))
+    Set ws = wb.Worksheets(splitList(1))
+    maxRow = ws.rows.count 'find max of first copy range
+    Dim maxRange As Integer
+    maxRange = CInt(maxRow / stepSize)
+    
+   
+    
+    'GET RANGE FOR SWEEP
+    Dim rangeStart As Integer
+    Dim rangeEnd As Integer
+    Dim rangeText As String
+    rangeText = Application.InputBox(Prompt:="Select range(in 10k) (ex: '0:10' or '0') nothing defaults to max", Title:="Range Select", Type:=2)
+    splitList = Split(rangeText, ":")
+    If (UBound(splitList) < 1) Then
+        If (UBound(splitList) < 0) Then 'IF BOTH ARE NOTHING MAX RANGE
+            rangeStart = 0
+            rangeEnd = maxRange
+        Else 'ONLY 1 Value provided (run that 10k sweep)
+            rangeStart = splitList(0)
+            rangeEnd = splitList(0)
+        End If
+        
+    Else
+        rangeStart = splitList(0) 'Run sweep provided
+        rangeEnd = splitList(1)
+    End If
+    
+    'MAIN LOOP FOR CALCULATING
+    Dim copyRng As Range
+    Dim pastRng As Range
+    Dim colWidth As Integer
+    
+    For x = rangeStart To rangeEnd 'CInt(ws.Range("A2").End(xlDown).Row / stepSize)
+        
+        rowBegin = x * stepSize
+        rowEnd = rowBegin + stepSize
+        
+        If rowEnd > maxRow Then
+            rowEnd = maxRow
+        End If
+        
+        
+        index = 0
+        While (CDPExists("CopyList" & index))
+            
+            copyBegin = 0
+            copyEnd = 0
+            pasteBegin = 0
+            pasteEnd = 0
+            
+            splitList = Split(CopyList(index), ",")
+            
+            Set wb = Workbooks.Open(splitList(6) & "\" & splitList(0))
+            Set ws = wb.Worksheets(splitList(1))
+            
+            If (splitList(5)) Then
+                copyBegin = rowBegin
+                copyEnd = rowEnd
+            Else
+                pasteBegin = rowBegin
+                pasteEnd = rowEnd
+            End If
+            
+            Set copyRng = ws.Range(ws.Cells(CInt(splitList(4)) + copyBegin, CInt(splitList(2))), ws.Cells(CInt(splitList(4)) + copyEnd, CInt(splitList(3))))  'copy range
+            colWidth = CInt(splitList(3)) - CInt(splitList(2))
+            
+            splitList = Split(PasteList(index), ",")
+            
+            Set wb = Workbooks.Open(splitList(6) & "\" & splitList(0))
+            Set ws = wb.Worksheets(splitList(1))
+            
+            Set pasteRng = ws.Range(ws.Cells(CInt(splitList(4)) + pasteBegin, CInt(splitList(2))), ws.Cells(CInt(splitList(4)) + pasteEnd, CInt(splitList(2)) + colWidth)) 'copy range
+            If (splitList(5)) Then
+                pasteRng.value = copyRng.value
+            Else
+                copyRng.Copy (pasteRng)
+            End If
+            
+            index = index + 1
+        Wend
+        
+        
+    Next x
+
+
+End Sub
+
