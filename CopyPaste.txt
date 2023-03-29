@@ -80,7 +80,7 @@ Sub StateFileCheck()
     FPath = Application.ThisWorkbook.Path
     
     Dim stepSize As Integer
-    stepSize = 10000 
+    stepSize = 10000
     
     Dim rng As Range
     
@@ -137,7 +137,7 @@ Sub StateFileCheck()
     'Calculate max row/range
     Dim maxRow As Long
     splitList = Split(CopyList(0), ",")
-    Set wb = Workbooks.Open(FPath & "\" & splitList(0))
+    Set wb = Workbooks.Open(splitList(6) & "\" & splitList(0))
     Set ws = wb.Worksheets(splitList(1))
     maxRow = ws.rows.count 'find max of first copy range
     Dim maxRange As Integer
@@ -175,18 +175,18 @@ Sub StateFileCheck()
         rowBegin = x * stepSize
         rowEnd = rowBegin + stepSize
         
-        If rowEnd > maxRow Then
-            rowEnd = maxRow
-        End If
+        'If rowEnd > maxRow Then
+      '      rowEnd = maxRow
+      '  End If
         
         
         index = 0
         While (CDPExists("CopyList" & index))
             
             copyBegin = 0
-            copyEnd = 0
+            copyEnd = 10000
             pasteBegin = 0
-            pasteEnd = 0
+            pasteEnd = 10000
             
             splitList = Split(CopyList(index), ",")
             
@@ -224,4 +224,5 @@ Sub StateFileCheck()
 
 
 End Sub
+
 
