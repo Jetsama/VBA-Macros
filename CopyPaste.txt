@@ -14,7 +14,7 @@ Private Property Let CopyList(index As Integer, ByVal CDPValue)
     Set cdps = ThisWorkbook.CustomDocumentProperties
 
     If Not CDPExists(STOREDPATH) Then
-        cdps.Add name:=STOREDPATH, LinkToContent:=False, Type:=msoPropertyTypeString, value:=CDPValue
+        cdps.Add Name:=STOREDPATH, LinkToContent:=False, Type:=msoPropertyTypeString, Value:=CDPValue
     Else
         cdps.Item(STOREDPATH) = CDPValue
     End If
@@ -35,7 +35,7 @@ Private Property Let PasteList(index As Integer, ByVal CDPValue)
     Set cdps = ThisWorkbook.CustomDocumentProperties
 
     If Not CDPExists(STOREDPATH) Then
-        cdps.Add name:=STOREDPATH, LinkToContent:=False, Type:=msoPropertyTypeString, value:=CDPValue
+        cdps.Add Name:=STOREDPATH, LinkToContent:=False, Type:=msoPropertyTypeString, Value:=CDPValue
     Else
         cdps.Item(STOREDPATH) = CDPValue
     End If
@@ -66,7 +66,7 @@ Private Function CDPExists(CDPName As String) As Boolean
     Dim boo  As Boolean                               ' boolean value showing element exists
     Dim cdp  As DocumentProperty                      ' element of CustomDocumentProperties Collection
     For Each cdp In cdps
-        If LCase(cdp.name) = LCase(CDPName) Then
+        If LCase(cdp.Name) = LCase(CDPName) Then
             boo = True                                ' heureka
             Exit For                                  ' exit loop
         End If
@@ -115,7 +115,7 @@ Sub StateFileCheck()
                 If (Not (rng Is Nothing)) Then
                     'TODO- ADD WORKSHEET INFO
                     copyShift = MsgBox("Would you like to shift the copy value? Otherwise paste value will be shifted", vbQuestion + vbYesNo, "Copy Settings Found") = vbYes
-                    CopyList(index) = rng.Parent.Parent.name & "," & rng.Parent.name & "," & rng.Cells.Column & "," & (rng.Cells.Columns.count + rng.Cells.Column - 1) & "," & rng.Cells.Row & "," & copyShift & "," & rng.Parent.Parent.Path
+                    CopyList(index) = rng.Parent.Parent.Name & "," & rng.Parent.Name & "," & rng.Cells.Column & "," & (rng.Cells.Columns.Count + rng.Cells.Column - 1) & "," & rng.Cells.Row & "," & copyShift & "," & rng.Parent.Parent.Path
                     'Save copy list
 
                     
@@ -124,7 +124,7 @@ Sub StateFileCheck()
                    ' On Error GoTo 0
                     copyOption = MsgBox("Would you like to copy value?", vbQuestion + vbYesNo, "Copy Settings Found") = vbYes
                    
-                    PasteList(index) = rng.Parent.Parent.name & "," & rng.Parent.name & "," & rng.Cells.Column & "," & (rng.Cells.Columns.count + rng.Cells.Column - 1) & "," & rng.Cells.Row & "," & copyOption & "," & rng.Parent.Parent.Path & "," & copyShift
+                    PasteList(index) = rng.Parent.Parent.Name & "," & rng.Parent.Name & "," & rng.Cells.Column & "," & (rng.Cells.Columns.Count + rng.Cells.Column - 1) & "," & rng.Cells.Row & "," & copyOption & "," & rng.Parent.Parent.Path & "," & copyShift
                     
                 End If
                 index = index + 1
@@ -139,7 +139,7 @@ Sub StateFileCheck()
     splitList = Split(CopyList(0), ",")
     Set wb = Workbooks.Open(splitList(6) & "\" & splitList(0))
     Set ws = wb.Worksheets(splitList(1))
-    maxRow = ws.rows.count 'find max of first copy range
+    maxRow = ws.Rows.Count 'find max of first copy range
     Dim maxRange As Integer
     maxRange = CInt(maxRow / stepSize)
     
@@ -211,7 +211,7 @@ Sub StateFileCheck()
             
             Set pasteRng = ws.Range(ws.Cells(CInt(splitList(4)) + pasteBegin, CInt(splitList(2))), ws.Cells(CInt(splitList(4)) + pasteEnd, CInt(splitList(2)) + colWidth)) 'copy range
             If (splitList(5)) Then
-                pasteRng.value = copyRng.value
+                pasteRng.Value = copyRng.Value
             Else
                 copyRng.Copy (pasteRng)
             End If
